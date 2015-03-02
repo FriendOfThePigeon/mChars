@@ -1,0 +1,66 @@
+#!/usr/bin/perl
+use strict;
+
+use utf8::all;
+
+use Getopt::Long;
+use Gtk2 -init;
+
+use MCharsModel;
+use ClipboardModel;
+use MCharsView;
+
+my $VERBOSITY = 4;
+my @msgs = ();
+my %MSG = (
+	'ALWAYS' => 0,
+	'ERROR' => 1,
+	'WARNING' => 2,
+	'INFO' => 3,
+	'DEBUG' => 4,
+);
+sub msg {
+	my ($level, $msg) = @_;
+	my $msg_level = $MSG{$level};
+	if (!$msg_level) {
+		$msg_level = 0;
+	}
+	return if ($msg_level > $VERBOSITY);
+	push @msgs, [$msg_level, $msg];
+}
+
+sub my_abort {
+	Gtk2->main_quit();
+	exit 0;
+}
+
+sub get_options {
+	my $cfg = {
+		DBFILE => $ENV{HOME} . "/.mtimes",
+	};
+	GetOptions (
+		'db:s' => sub { $cfg->{DBFILE} = $_[0] }, 
+	);
+	return $cfg;
+}
+
+sub help {
+	my @params = @_;
+	printf "Invalid option(s): [%s]\n", join(', ', @params);
+	exit 1;
+}
+
+# Program starts here
+
+my $cfg = get_options();
+Gtk2->init;
+my $model = MCharsModel->new($cfg);
+my $clipboard_model = ClipboardModel->new($cfg);
+my $view = MCharsView->new()
+	#->set_show_msg(\&MCharsMsgBox::msg)
+	->set_abort(\&my_abort)
+	->set_clipboard_model($clipboard_model)
+	->set_model($model);
+$view->show();
+Gtk2->main;
+
