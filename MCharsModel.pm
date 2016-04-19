@@ -69,7 +69,10 @@ sub parse_results {
 sub input {
 	my ($self, $input) = @_;
 	printf STDERR "Filtering on >%s<\n", $input;
-	my $results = $self->parse_results(`unicode --max=99 '$input'`);
+	my $codepoint = ($input =~ m/^0x[A-Fa-f0-9]+$/);
+	my $results = $codepoint 
+		? $self->parse_results(`unicode --max=99 -x '$input'`)
+		: $self->parse_results(`unicode --max=99 '$input'`);
 	$self->{_results} = $results;
 	$self->activate('results', $results);
 }
